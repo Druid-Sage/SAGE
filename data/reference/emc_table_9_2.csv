@@ -1,0 +1,23 @@
+land_use,tn_mgL,tp_mgL
+Low Density Residential,1.65,0.27
+Single Family,1.77,0.327
+Multi-Family,1.84,0.52
+Low Intensity Commercial,0.93,0.19
+High Intensity Commercial,2.4,0.345
+Light Industrial,1.2,0.26
+Highway,1.25,0.173
+Dry Prairie,2.025,0.184
+Marl Prairie,0.684,0.012
+Mesic Flatwoods,1.087,0.043
+Ruderal/Upland Pine,1.694,0.162
+Scrubby Flatwoods,1.155,0.027
+Upland Hardwood,1.042,0.346
+Upland Mixed Forest,0.606,1.166
+Wet Flatwoods,1.213,0.021
+Wet Prairie,1.095,0.015
+Xeric Scrub,1.596,0.156
+Rangeland/parkland,1.15,0.055
+General Agricultural,2.29,0.381
+Pasture,3.03,0.593
+Citrus,2.11,0.18
+Row Crops,2.5,0.577

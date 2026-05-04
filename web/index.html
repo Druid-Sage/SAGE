@@ -1,0 +1,2214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAGE — Stormwater Analysis &amp; GSI Evaluator</title>
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Source+Serif+4:wght@600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Druid brand palette (matches druid.solutions)
+   ============================================================ */
+:root {
+  --druid-forest:    #0F3F37;
+  --druid-forest-2:  #14594D;
+  --druid-sage:      #7FB9A3;
+  --druid-sage-soft: #c5dfd2;
+  --druid-gold:      #D9B85F;
+  --druid-charcoal:  #101416;
+  --druid-paper:     #F4F1E8;
+  --druid-paper-2:   #EEF5F1;
+  --druid-rule:      #d6d2c4;
+
+  /* Node-type accent colors that harmonize with the palette */
+  --c-catchment:     #7FB9A3;
+  --c-dry-retention: #B8956A;
+  --c-wet-detention: #6B92A8;
+  --c-other-bmp:     #D9B85F;
+  --c-outfall:       #101416;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: "Source Sans 3", "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  color: var(--druid-charcoal);
+  background: var(--druid-paper);
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================================
+   Header
+   ============================================================ */
+.app-header {
+  background: var(--druid-forest);
+  color: var(--druid-paper);
+  border-bottom: 3px solid var(--druid-gold);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-shrink: 0;
+}
+.app-header .brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.app-header .brand-name {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: var(--druid-paper);
+}
+.app-header .brand-tagline {
+  font-size: 12px;
+  color: var(--druid-sage);
+  letter-spacing: 1px;
+}
+.app-header .project-name-input {
+  flex: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--druid-paper);
+  font-size: 18px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-family: inherit;
+  min-width: 200px;
+  max-width: 500px;
+}
+.app-header .project-name-input:hover,
+.app-header .project-name-input:focus {
+  background: rgba(255,255,255,0.08);
+  border-color: var(--druid-gold);
+  outline: none;
+}
+.app-header .actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+button, .btn {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 120ms, color 120ms, border-color 120ms;
+  letter-spacing: .03em;
+}
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary {
+  background: var(--druid-gold);
+  color: var(--druid-charcoal);
+  border-color: transparent;
+}
+.btn-primary:hover { background: #e6c878; }
+.btn-secondary {
+  background: transparent;
+  color: var(--druid-paper);
+  border-color: var(--druid-sage);
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.1); }
+.btn-ghost {
+  background: var(--druid-paper);
+  color: var(--druid-forest);
+  border-color: var(--druid-rule);
+}
+.btn-ghost:hover { background: var(--druid-paper-2); border-color: var(--druid-forest); }
+.btn-danger {
+  background: transparent;
+  color: #a13a2c;
+  border-color: #d4a299;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+.btn-danger:hover { background: #fbe9e6; }
+.btn-add {
+  background: var(--druid-forest);
+  color: var(--druid-paper);
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  margin-top: 4px;
+}
+.btn-add:hover { background: var(--druid-forest-2); }
+.btn-add-row {
+  background: transparent;
+  color: var(--druid-forest);
+  border-color: var(--druid-sage);
+  border-style: dashed;
+  font-size: 12px;
+  padding: 4px 10px;
+}
+.btn-add-row:hover { background: var(--druid-paper-2); }
+
+/* ============================================================
+   3-column main layout
+   ============================================================ */
+.main {
+  display: grid;
+  grid-template-columns: 280px 1fr 360px;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+.col {
+  overflow-y: auto;
+  padding: 16px;
+}
+.col-left  { border-right: 1px solid var(--druid-rule); background: var(--druid-paper); }
+.col-mid   { background: #fff; }
+.col-right { border-left: 1px solid var(--druid-rule); background: var(--druid-paper); }
+
+.col h2 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--druid-forest);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-bottom: 2px solid var(--druid-gold);
+  padding-bottom: 4px;
+}
+.col h2:not(:first-child) { margin-top: 24px; }
+
+/* ============================================================
+   Project metadata block (top of left column)
+   ============================================================ */
+.project-meta {
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--druid-rule);
+}
+.field-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
+}
+.field-row label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--druid-forest);
+  margin-bottom: 2px;
+}
+.field-row input,
+.field-row select,
+.field-row textarea {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--druid-rule);
+  border-radius: 3px;
+  background: #fff;
+  color: var(--druid-charcoal);
+  width: 100%;
+}
+.field-row input:focus,
+.field-row select:focus,
+.field-row textarea:focus {
+  outline: none;
+  border-color: var(--druid-forest);
+  box-shadow: 0 0 0 2px var(--druid-sage-soft);
+}
+.field-row textarea {
+  font-family: inherit;
+  resize: vertical;
+  min-height: 50px;
+}
+.field-row.invalid input,
+.field-row.invalid select { border-color: #c0392b; background: #fbe9e6; }
+.field-row .hint {
+  font-size: 11px;
+  color: #777;
+  margin-top: 2px;
+  font-style: italic;
+}
+.field-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* ============================================================
+   Node list
+   ============================================================ */
+.node-list { margin-bottom: 8px; }
+.node-card {
+  background: #fff;
+  border: 1px solid var(--druid-rule);
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: border-color 120ms, background 120ms;
+  border-left-width: 4px;
+}
+.node-card:hover { background: var(--druid-paper-2); }
+.node-card.selected {
+  border-color: var(--druid-forest);
+  background: var(--druid-paper-2);
+  box-shadow: 0 0 0 1px var(--druid-forest);
+}
+.node-card.catchment     { border-left-color: var(--c-catchment); }
+.node-card.dry_retention { border-left-color: var(--c-dry-retention); }
+.node-card.wet_detention { border-left-color: var(--c-wet-detention); }
+.node-card.other_bmp     { border-left-color: var(--c-other-bmp); }
+.node-card.outfall       { border-left-color: var(--c-outfall); }
+
+.node-card-id {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--druid-forest);
+  background: var(--druid-paper);
+  padding: 2px 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.node-card-name {
+  flex: 1;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.node-card-arrow {
+  font-size: 11px;
+  color: #888;
+  font-family: "JetBrains Mono", monospace;
+  flex-shrink: 0;
+}
+.node-card-arrow.disconnected { color: #c0392b; font-style: italic; }
+
+.add-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+/* ============================================================
+   Node editor (middle column)
+   ============================================================ */
+.editor-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #888;
+  font-style: italic;
+}
+.editor-empty .hint-mark {
+  font-size: 36px;
+  display: block;
+  margin-bottom: 8px;
+  opacity: 0.4;
+}
+.node-editor-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--druid-gold);
+  margin-bottom: 16px;
+}
+.node-editor-header .nh-id {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  font-weight: 700;
+  background: var(--druid-forest);
+  color: var(--druid-paper);
+  padding: 4px 8px;
+  border-radius: 3px;
+}
+.node-editor-header .nh-type {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #666;
+  font-weight: 600;
+}
+.node-editor-header .nh-name {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 600;
+}
+.editor-section {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--druid-paper-2);
+}
+.editor-section:last-child { border-bottom: none; }
+.editor-section h3 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--druid-forest);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ============================================================
+   Subarea table (catchments)
+   ============================================================ */
+.subarea-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.subarea-table th {
+  text-align: left;
+  padding: 4px 6px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--druid-forest);
+  border-bottom: 2px solid var(--druid-gold);
+  font-weight: 700;
+}
+.subarea-table td {
+  padding: 3px 4px;
+  border-bottom: 1px solid var(--druid-paper-2);
+  vertical-align: middle;
+}
+.subarea-table input,
+.subarea-table select {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 3px 5px;
+  border: 1px solid var(--druid-rule);
+  border-radius: 3px;
+  width: 100%;
+  background: #fff;
+}
+.subarea-table input:focus,
+.subarea-table select:focus {
+  outline: none;
+  border-color: var(--druid-forest);
+}
+.subarea-table input.num { text-align: right; }
+.subarea-table .col-cover  { width: 28%; }
+.subarea-table .col-area   { width: 12%; }
+.subarea-table .col-cn     { width: 10%; }
+.subarea-table .col-dcia   { width: 10%; }
+.subarea-table .col-emc    { width: 13%; }
+.subarea-table .col-notes  { width: 16%; }
+.subarea-table .col-action { width: 5%; }
+.subarea-rowdetail {
+  display: none;
+  background: var(--druid-paper-2);
+  padding: 6px 10px;
+  font-size: 11px;
+  color: #555;
+}
+
+/* ============================================================
+   Right column: results
+   ============================================================ */
+.result-block {
+  background: #fff;
+  border: 1px solid var(--druid-rule);
+  border-radius: 4px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.result-block h3 {
+  margin: 0 0 6px 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--druid-forest);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.result-block .big-number {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--druid-forest);
+  font-variant-numeric: tabular-nums;
+  font-family: "Source Serif 4", Georgia, serif;
+}
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 2px 0;
+}
+.result-row .label { color: #555; }
+.result-row .value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.result-row .value-units {
+  font-size: 10.5px;
+  font-weight: 400;
+  color: #777;
+  margin-left: 3px;
+}
+.result-reduction {
+  text-align: center;
+  padding: 6px 0;
+}
+.result-reduction .label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #666;
+  letter-spacing: 0.1em;
+}
+.result-reduction .value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--druid-forest);
+  font-family: "Source Serif 4", Georgia, serif;
+}
+.reductions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* Section header within the right column (separates "this node" from "project totals") */
+.results-section-header {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--druid-forest);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 2px solid var(--druid-gold);
+  padding-bottom: 3px;
+  margin: 14px 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.results-section-header:first-child { margin-top: 0; }
+.results-section-header .header-id {
+  font-family: "JetBrains Mono", monospace;
+  background: var(--druid-forest);
+  color: var(--druid-paper);
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+}
+.results-section-header .header-name {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #555;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Node-type-tinted left border on the per-node panel */
+.result-block.node-context.catchment     { border-left: 4px solid var(--c-catchment); }
+.result-block.node-context.dry_retention { border-left: 4px solid var(--c-dry-retention); }
+.result-block.node-context.wet_detention { border-left: 4px solid var(--c-wet-detention); }
+.result-block.node-context.other_bmp     { border-left: 4px solid var(--c-other-bmp); }
+.result-block.node-context.outfall       { border-left: 4px solid var(--c-outfall); }
+
+/* Mini subsection within a result block (e.g., "Inflow", "Treatment", "Outflow") */
+.result-subsection {
+  margin-top: 10px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--druid-paper-2);
+}
+.result-subsection:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+.result-subsection .sub-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--druid-forest);
+  margin-bottom: 4px;
+}
+
+/* Highlighted single-stat (used for the dry retention storage depth, wet detention td, etc.) */
+.result-row.highlighted {
+  background: var(--druid-paper-2);
+  padding: 4px 6px;
+  margin: 4px -6px;
+  border-radius: 3px;
+}
+.result-row.highlighted .value { color: var(--druid-forest); }
+
+/* Tag inside a result row that gives a tiny annotation like "(no volume change)" */
+.result-row .tag {
+  font-size: 10px;
+  color: #888;
+  font-style: italic;
+  margin-left: 4px;
+}
+
+/* Quick numeric badge next to a node card in the left column */
+.node-card-stat {
+  font-size: 10.5px;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--druid-forest);
+  background: var(--druid-paper-2);
+  padding: 1px 5px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+.node-card-stat.disabled { color: #aaa; background: transparent; }
+
+/* Sub-area table totals row (subtle highlight at bottom of subarea table) */
+.subarea-table tr.totals-row td {
+  border-top: 2px solid var(--druid-gold);
+  font-weight: 600;
+  background: var(--druid-paper-2);
+  font-size: 11.5px;
+  padding: 5px 6px;
+  font-family: "JetBrains Mono", "Consolas", monospace;
+  color: var(--druid-forest);
+}
+.subarea-table tr.totals-row td.label-cell {
+  font-family: "Source Sans 3", Arial, sans-serif;
+  text-align: right;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #555;
+}
+
+.warning-list {
+  background: #fff5e0;
+  border-left: 4px solid var(--druid-gold);
+  padding: 8px 10px;
+  border-radius: 0 3px 3px 0;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.warning-list .w-source {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10.5px;
+  color: var(--druid-forest);
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.error-banner {
+  background: #fbe9e6;
+  border-left: 4px solid #c0392b;
+  padding: 10px 12px;
+  border-radius: 0 3px 3px 0;
+  margin-bottom: 10px;
+  color: #6e1f15;
+  font-size: 12.5px;
+}
+.error-banner b { display: block; margin-bottom: 3px; }
+
+.calc-status {
+  font-size: 11px;
+  color: #888;
+  text-align: right;
+  margin-bottom: 4px;
+  height: 14px;
+  font-style: italic;
+}
+
+/* ============================================================
+   Footer (attribution + license + disclaimer block)
+   Two stacked lines — top: brand/version/license, bottom: disclaimer.
+   Both kept compact so the editor area stays maximal.
+   ============================================================ */
+.app-footer {
+  flex-shrink: 0;
+  padding: 6px 20px;
+  background: var(--druid-paper);
+  border-top: 2px solid var(--druid-gold);
+  font-size: 11px;
+  color: #666;
+}
+.app-footer .footer-line-1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.app-footer .footer-version {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.app-footer .footer-version b { color: var(--druid-forest); font-weight: 700; }
+.app-footer .footer-disclaimer {
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: #777;
+  font-style: italic;
+  line-height: 1.35;
+}
+.app-footer a { color: var(--druid-forest); text-decoration: none; }
+.app-footer a:hover { text-decoration: underline; }
+
+/* TM superscript — small, slightly raised, visually subordinate
+   to the wordmark itself. Two sizes: brand-tm for the big SAGE
+   in the header, brand-tm-small for inline mentions in the footer. */
+.brand-tm {
+  font-size: 0.42em;
+  vertical-align: super;
+  letter-spacing: 0.03em;
+  margin-left: 1px;
+  font-weight: 600;
+  color: var(--druid-gold);
+}
+.brand-tm-small {
+  font-size: 0.65em;
+  vertical-align: super;
+  letter-spacing: 0.03em;
+  margin-left: 1px;
+}
+
+/* ============================================================
+   Modal
+   ============================================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 63, 55, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal {
+  background: var(--druid-paper);
+  border-radius: 6px;
+  border-top: 4px solid var(--druid-gold);
+  padding: 24px 28px;
+  min-width: 360px;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+}
+.modal h3 {
+  margin: 0 0 16px 0;
+  color: var(--druid-forest);
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 18px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* hidden file input for Load button */
+.file-input-hidden { display: none; }
+
+/* small inline help */
+.help-inline {
+  font-size: 11px;
+  color: #777;
+  font-style: italic;
+  margin-top: 2px;
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<header class="app-header">
+  <div class="brand">
+    <span class="brand-name">SAGE<sup class="brand-tm">TM</sup></span>
+    <span class="brand-tagline">v1.0</span>
+  </div>
+  <input class="project-name-input" id="project-name-input"
+         placeholder="Project name…" data-bind="project.name">
+  <div class="actions">
+    <button class="btn btn-secondary" id="btn-new" title="Start a new empty project">New</button>
+    <button class="btn btn-secondary" id="btn-load" title="Load a project file">Load…</button>
+    <button class="btn btn-secondary" id="btn-save" title="Download the current project as JSON">Save</button>
+    <button class="btn btn-primary"   id="btn-report-summary" title="Generate one-page summary report">Summary</button>
+    <button class="btn btn-primary"   id="btn-report-full" title="Generate full audit report">Full Report</button>
+    <input class="file-input-hidden" type="file" id="file-input" accept=".json,application/json">
+  </div>
+</header>
+
+<!-- ============================================================
+     MAIN 3-COLUMN LAYOUT
+     ============================================================ -->
+<div class="main">
+
+  <!-- LEFT: project metadata + node list -->
+  <div class="col col-left">
+    <div class="project-meta">
+      <h2>Project</h2>
+      <div class="field-row">
+        <label>Applicant</label>
+        <input type="text" data-bind="project.applicant">
+      </div>
+      <div class="field-grid-2">
+        <div class="field-row">
+          <label>Zone (1–5)</label>
+          <select data-bind="project.zone" data-bind-type="int">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+          <div class="help-inline">Per AH Appendix M</div>
+        </div>
+        <div class="field-row">
+          <label>Rainfall (in/yr)</label>
+          <input type="number" step="0.1" min="0.1" data-bind="project.annual_rainfall_in" data-bind-type="float">
+        </div>
+      </div>
+      <div class="field-grid-2">
+        <div class="field-row">
+          <label>Created</label>
+          <input type="date" data-bind="project.date_created">
+        </div>
+        <div class="field-row">
+          <label>Modified</label>
+          <input type="date" data-bind="project.date_modified">
+        </div>
+      </div>
+      <div class="field-row">
+        <label>Project notes</label>
+        <textarea rows="2" data-bind="project.notes"
+          placeholder="Site context, design assumptions, etc."></textarea>
+      </div>
+    </div>
+
+    <h2>Nodes</h2>
+    <div class="node-list" id="node-list"></div>
+    <div class="add-buttons">
+      <button class="btn btn-add" data-add-type="catchment">+ Add Catchment</button>
+      <button class="btn btn-add" data-add-type="dry_retention">+ Add Dry Retention BMP</button>
+      <button class="btn btn-add" data-add-type="wet_detention">+ Add Wet Detention BMP</button>
+      <button class="btn btn-add" data-add-type="other_bmp">+ Add Other BMP</button>
+      <button class="btn btn-add" data-add-type="outfall">+ Add Outfall</button>
+    </div>
+  </div>
+
+  <!-- MIDDLE: node editor -->
+  <div class="col col-mid" id="col-mid">
+    <div class="editor-empty">
+      <span class="hint-mark">⌥</span>
+      Select a node from the left to edit its parameters,<br>
+      or use the +Add buttons to create one.
+    </div>
+  </div>
+
+  <!-- RIGHT: live results -->
+  <div class="col col-right">
+    <h2>Results</h2>
+    <div class="calc-status" id="calc-status"></div>
+    <div id="results-area">
+      <div class="editor-empty" style="padding:20px 10px;">
+        Build a project on the left to see results here.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================
+     FOOTER
+     The application footer carries the canonical attribution +
+     legal block that appears on every screen of the UI:
+       - SAGE/DRUID trademark notation
+       - Apache 2.0 license link
+       - Engineering disclaimer (verification required)
+     The same block (with more detail) is rendered in every generated
+     report by report.py's render_brand_footer().
+     ============================================================ -->
+<footer class="app-footer">
+  <div class="footer-line-1">
+    <div class="footer-version">
+      <b>SAGE<sup class="brand-tm-small">TM</sup></b> v1.0.0 ·
+      by <b>DRUID<sup class="brand-tm-small">TM</sup></b> ·
+      <a href="https://druid.solutions" target="_blank" rel="noopener">druid.solutions</a> ·
+      <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener">Apache 2.0</a>
+    </div>
+  </div>
+  <div class="footer-disclaimer">
+    Results must be independently verified by the user or responsible professional.
+    Use of this software does not constitute agency approval or a guarantee of compliance.
+  </div>
+</footer>
+
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+/*!
+ * SAGE — Stormwater Analysis & GSI Evaluator (web UI)
+ * Copyright 2026 Druid (https://druid.solutions)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * SAGE and DRUID are trademarks of Druid.
+ */
+"use strict";
+
+/* ------------------------------------------------------------
+ * Application state
+ * ------------------------------------------------------------ */
+// `project` is the source of truth; all UI reads/writes against it.
+// On every change we re-render and (debounced) call /api/calculate.
+let project = newEmptyProject();
+let selectedNodeId = null;
+let lastResult = null;
+let lastError = null;
+let landCovers = [];           // populated from /api/land_covers
+let landCoverEmc = {};         // {name: {tn_mgL, tp_mgL}}
+let presets = {};              // populated from /api/presets
+
+const LB_PER_KG = 2.20462;
+const STORAGE_KEY = 'sage:project:autosave';
+const DEBOUNCE_MS = 300;
+
+/* ------------------------------------------------------------
+ * Project skeleton constructors
+ * ------------------------------------------------------------ */
+function newEmptyProject() {
+  const today = new Date().toISOString().slice(0, 10);
+  return {
+    schema_version: "1.0",
+    project: {
+      name: "Untitled Project",
+      applicant: "",
+      date_created: today,
+      date_modified: today,
+      zone: 4,
+      annual_rainfall_in: 52.0,
+      default_units: "lb_per_yr",
+      notes: ""
+    },
+    nodes: [
+      makeOutfallNode("OUT1", "Discharge")
+    ]
+  };
+}
+function makeCatchmentNode(id) {
+  return {
+    id: id,
+    type: "catchment",
+    name: "New Catchment",
+    notes: "",
+    drains_to: firstOutfallId(),
+    position: { x: 0, y: 0 },
+    subareas: [
+      makeSubarea()
+    ]
+  };
+}
+function makeSubarea() {
+  return {
+    land_cover: landCovers[0] || "Single Family",
+    area_ac: 1.0,
+    non_dcia_cn: 80.00,
+    dcia_pct: 40.00,
+    emc_tn_override: null,
+    emc_tp_override: null,
+    notes: ""
+  };
+}
+function makeDryRetentionNode(id) {
+  return {
+    id: id,
+    type: "dry_retention",
+    name: "New Dry Retention",
+    notes: "",
+    drains_to: firstOutfallId(),
+    position: { x: 0, y: 0 },
+    storage_volume_acft: 0.5
+  };
+}
+function makeWetDetentionNode(id) {
+  return {
+    id: id,
+    type: "wet_detention",
+    name: "New Wet Pond",
+    notes: "",
+    drains_to: firstOutfallId(),
+    position: { x: 0, y: 0 },
+    permanent_pool_acft: 1.0,
+    littoral_zone_pct: 0.0,
+    littoral_zone_notes: "",
+    floating_islands_pct_coverage: 0.0,
+    floating_islands_credit_override: null,
+    floating_islands_notes: "",
+    alum_injection_credit_tn_pct: 0.0,
+    alum_injection_credit_tp_pct: 0.0,
+    alum_injection_notes: ""
+  };
+}
+function makeOtherBmpNode(id) {
+  return {
+    id: id,
+    type: "other_bmp",
+    name: "New Other BMP",
+    notes: "",
+    drains_to: firstOutfallId(),
+    position: { x: 0, y: 0 },
+    preset: "custom",
+    tn_removal_pct: 0.0,
+    tp_removal_pct: 0.0
+  };
+}
+function makeOutfallNode(id, name) {
+  return {
+    id: id,
+    type: "outfall",
+    name: name || "Outfall",
+    notes: "",
+    position: { x: 0, y: 0 }
+  };
+}
+
+function firstOutfallId() {
+  const o = (project.nodes || []).find(n => n.type === 'outfall');
+  return o ? o.id : null;
+}
+
+/* ------------------------------------------------------------
+ * ID generation: find next free ID for a given prefix
+ * ------------------------------------------------------------ */
+function nextId(prefix) {
+  let n = 1;
+  const used = new Set(project.nodes.map(n => n.id));
+  while (used.has(prefix + n)) n++;
+  return prefix + n;
+}
+function prefixForType(type) {
+  return ({
+    catchment: 'C',
+    dry_retention: 'B',
+    wet_detention: 'B',
+    other_bmp: 'B',
+    outfall: 'OUT'
+  })[type] || 'N';
+}
+
+/* ------------------------------------------------------------
+ * Cycle prevention: which nodes lead INTO nodeId via drains_to chain?
+ *
+ * These are the nodes that must be excluded from nodeId's "drains to"
+ * dropdown, because picking any of them as the new target would close
+ * a loop (target → ... → nodeId → target). We compute this with a
+ * reverse-graph BFS: build the predecessor map (who drains INTO each
+ * node), then BFS from nodeId backwards.
+ *
+ * Note: descendants of nodeId (nodes downstream OF nodeId) are NOT
+ * excluded. They are perfectly valid drainage targets — that's what
+ * drains_to means.
+ * ------------------------------------------------------------ */
+function ancestorsOf(nodeId) {
+  // Build predecessor map: incoming[X] = list of nodes whose drains_to = X
+  const incoming = {};
+  for (const n of project.nodes) incoming[n.id] = [];
+  for (const n of project.nodes) {
+    if (n.drains_to && incoming.hasOwnProperty(n.drains_to)) {
+      incoming[n.drains_to].push(n.id);
+    }
+  }
+  // BFS upstream from nodeId
+  const result = new Set();
+  const queue = [nodeId];
+  while (queue.length) {
+    const cur = queue.shift();
+    for (const pred of incoming[cur] || []) {
+      if (!result.has(pred)) {
+        result.add(pred);
+        queue.push(pred);
+      }
+    }
+  }
+  return result;
+}
+
+/* ------------------------------------------------------------
+ * Path-based getter / setter (for data-bind)
+ * ------------------------------------------------------------ */
+function getByPath(obj, path) {
+  return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
+}
+function setByPath(obj, path, value) {
+  const parts = path.split('.');
+  const last = parts.pop();
+  let cur = obj;
+  for (const p of parts) {
+    if (cur[p] == null || typeof cur[p] !== 'object') cur[p] = {};
+    cur = cur[p];
+  }
+  cur[last] = value;
+}
+
+/* ------------------------------------------------------------
+ * Coerce input values per data-bind-type
+ * ------------------------------------------------------------ */
+function coerceValue(value, type) {
+  if (type === 'int') {
+    const n = parseInt(value, 10);
+    return isNaN(n) ? null : n;
+  }
+  if (type === 'float') {
+    const n = parseFloat(value);
+    return isNaN(n) ? null : n;
+  }
+  if (type === 'float-or-null') {
+    if (value === '' || value === null || value === undefined) return null;
+    const n = parseFloat(value);
+    return isNaN(n) ? null : n;
+  }
+  return value;
+}
+
+/* ------------------------------------------------------------
+ * Auto-save / restore
+ * ------------------------------------------------------------ */
+function saveAutosave() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
+  } catch (e) { /* localStorage may be full or disabled */ }
+}
+function loadAutosave() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const obj = JSON.parse(raw);
+    if (!obj.schema_version || !obj.nodes) return false;
+    project = obj;
+    return true;
+  } catch (e) { return false; }
+}
+
+/* ------------------------------------------------------------
+ * Engine call (debounced)
+ * ------------------------------------------------------------ */
+let calcTimer = null;
+function markDirty() {
+  saveAutosave();
+  if (calcTimer) clearTimeout(calcTimer);
+  setCalcStatus('typing…');
+  calcTimer = setTimeout(runCalculation, DEBOUNCE_MS);
+}
+function setCalcStatus(text) {
+  document.getElementById('calc-status').textContent = text || '';
+}
+async function runCalculation() {
+  setCalcStatus('calculating…');
+  try {
+    const r = await fetch('/api/calculate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(project),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      lastResult = null;
+      lastError = data;
+    } else {
+      lastResult = data;
+      lastError = null;
+    }
+  } catch (e) {
+    lastResult = null;
+    lastError = { error: 'Network error', detail: String(e) };
+  }
+  setCalcStatus('');
+  // Re-render both the results panel AND the node list so the per-node
+  // stat badges in the left column (TN load, % capture, etc.) reflect
+  // the latest calculation. Editor middle column is untouched, so the
+  // user's input focus is preserved.
+  renderResults();
+  renderNodeList();
+}
+
+/* ------------------------------------------------------------
+ * Render: full re-render is fine for V1 (project is small)
+ * ------------------------------------------------------------ */
+function render() {
+  renderHeaderBindings();
+  renderNodeList();
+  renderEditor();
+  renderResults();
+}
+function renderHeaderBindings() {
+  // Apply data-bind values to header & project meta inputs
+  document.querySelectorAll('[data-bind]').forEach(el => {
+    if (el.closest('#col-mid')) return;  // editor handled separately
+    const path = el.dataset.bind;
+    const v = getByPath(project, path);
+    if (v == null) {
+      el.value = '';
+    } else {
+      el.value = v;
+    }
+  });
+}
+
+function renderNodeList() {
+  const list = document.getElementById('node-list');
+  if (!project.nodes.length) {
+    list.innerHTML = '<div style="font-size:12px;color:#888;font-style:italic;padding:8px;">No nodes yet — add one below.</div>';
+    return;
+  }
+  // Look up traces by node_id so we can render quick numeric summaries
+  const traceById = {};
+  if (lastResult && lastResult.traces) {
+    for (const t of lastResult.traces) traceById[t.node_id] = t;
+  }
+  // Order: catchments first, then BMPs, then outfalls (just for display)
+  const order = { catchment: 0, dry_retention: 1, wet_detention: 1, other_bmp: 1, outfall: 2 };
+  const sorted = [...project.nodes].sort((a, b) =>
+    (order[a.type] ?? 9) - (order[b.type] ?? 9) || a.id.localeCompare(b.id));
+  list.innerHTML = sorted.map(n => {
+    const sel = (n.id === selectedNodeId) ? ' selected' : '';
+    const arrow = (n.type === 'outfall') ? '' :
+      (n.drains_to
+        ? `<span class="node-card-arrow">→ ${escapeHtml(n.drains_to)}</span>`
+        : `<span class="node-card-arrow disconnected">→ —</span>`);
+    const stat = nodeCardStat(n, traceById[n.id]);
+    return `
+      <div class="node-card ${n.type}${sel}" data-node-id="${escapeAttr(n.id)}">
+        <span class="node-card-id">${escapeHtml(n.id)}</span>
+        <span class="node-card-name">${escapeHtml(n.name || '')}</span>
+        ${stat}
+        ${arrow}
+      </div>`;
+  }).join('');
+}
+
+// Compute the small badge shown on each node card. Catchments show the
+// load they generate; BMPs show their effective TN reduction (their
+// "headline" treatment number); outfalls show final TN load. If no
+// trace data is available yet, render a dimmed placeholder so the
+// layout stays stable.
+function nodeCardStat(node, trace) {
+  if (!trace || !trace.calculation_details) {
+    return `<span class="node-card-stat disabled">—</span>`;
+  }
+  const cd = trace.calculation_details;
+  const out = trace.outputs_summary || {};
+  if (node.type === 'catchment') {
+    const tn = cd.own_tn_lb;
+    if (tn == null) return `<span class="node-card-stat disabled">—</span>`;
+    return `<span class="node-card-stat" title="TN load this catchment generates">${fmtNum(tn, 1)} lb TN</span>`;
+  }
+  if (node.type === 'dry_retention') {
+    const eff = cd.efficiency_pct;
+    if (eff == null) return `<span class="node-card-stat disabled">—</span>`;
+    return `<span class="node-card-stat" title="Volume / TN / TP capture from Appendix O">${fmtNum(eff, 0)}% capture</span>`;
+  }
+  if (node.type === 'wet_detention') {
+    const tn = cd.eff_tn_pct;
+    if (tn == null) return `<span class="node-card-stat disabled">—</span>`;
+    return `<span class="node-card-stat" title="Combined TN removal at this pond">${fmtNum(tn, 0)}% TN</span>`;
+  }
+  if (node.type === 'other_bmp') {
+    const tn = cd.tn_removal_pct;
+    if (tn == null) return `<span class="node-card-stat disabled">—</span>`;
+    return `<span class="node-card-stat" title="TN removal applied at this BMP">${fmtNum(tn, 0)}% TN</span>`;
+  }
+  if (node.type === 'outfall') {
+    if (out.tn_lb == null) return `<span class="node-card-stat disabled">—</span>`;
+    return `<span class="node-card-stat" title="Final TN discharge">${fmtNum(out.tn_lb, 1)} lb TN</span>`;
+  }
+  return `<span class="node-card-stat disabled">—</span>`;
+}
+
+/* ------------------------------------------------------------
+ * Editor renderers (one per node type)
+ * ------------------------------------------------------------ */
+function renderEditor() {
+  const mid = document.getElementById('col-mid');
+  if (!selectedNodeId) {
+    mid.innerHTML = `
+      <div class="editor-empty">
+        <span class="hint-mark">⌥</span>
+        Select a node from the left to edit its parameters,<br>
+        or use the +Add buttons to create one.
+      </div>`;
+    return;
+  }
+  const node = project.nodes.find(n => n.id === selectedNodeId);
+  if (!node) { selectedNodeId = null; renderEditor(); return; }
+
+  const headerHtml = `
+    <div class="node-editor-header">
+      <span class="nh-id">${escapeHtml(node.id)}</span>
+      <span class="nh-name">${escapeHtml(node.name || '')}</span>
+      <span class="nh-type">${nodeTypeLabel(node.type)}</span>
+      <button class="btn btn-danger" id="btn-delete-node">Delete</button>
+    </div>`;
+
+  const commonHtml = renderEditorCommonFields(node);
+
+  let typeHtml = '';
+  switch (node.type) {
+    case 'catchment':     typeHtml = renderCatchmentEditor(node); break;
+    case 'dry_retention': typeHtml = renderDryRetentionEditor(node); break;
+    case 'wet_detention': typeHtml = renderWetDetentionEditor(node); break;
+    case 'other_bmp':     typeHtml = renderOtherBmpEditor(node); break;
+    case 'outfall':       typeHtml = renderOutfallEditor(node); break;
+  }
+
+  mid.innerHTML = headerHtml + commonHtml + typeHtml;
+  attachEditorHandlers(node);
+}
+
+function renderEditorCommonFields(node) {
+  // ID, name, drains_to, notes — common to every type (ID is read-only)
+  const drainsToHtml = (node.type === 'outfall') ? '' : renderDrainsToField(node);
+  return `
+    <div class="editor-section">
+      <h3>Identity</h3>
+      <div class="field-grid-2">
+        <div class="field-row">
+          <label>Node ID</label>
+          <input type="text" id="edit-id" value="${escapeAttr(node.id)}">
+          <div class="help-inline">Unique identifier; renaming affects "drains to" references in other nodes.</div>
+        </div>
+        <div class="field-row">
+          <label>Name</label>
+          <input type="text" data-edit-bind="name" value="${escapeAttr(node.name || '')}">
+        </div>
+      </div>
+      ${drainsToHtml}
+      <div class="field-row">
+        <label>Notes</label>
+        <textarea rows="2" data-edit-bind="notes" placeholder="Free text — appears in audit report.">${escapeHtml(node.notes || '')}</textarea>
+      </div>
+    </div>`;
+}
+
+function renderDrainsToField(node) {
+  // A node can drain to any other node EXCEPT:
+  //   - itself (no self-loops)
+  //   - any ANCESTOR (a node whose drains_to chain leads back to this node).
+  //     Setting drains_to to an ancestor would close a cycle.
+  // Descendants (nodes already downstream of this one) are fine to pick;
+  // doing so just changes/shortens the existing path. Catchments are also
+  // valid targets — that's the C1→C2→BMP design.
+  const ancestors = ancestorsOf(node.id);
+  const opts = project.nodes
+    .filter(n => n.id !== node.id && !ancestors.has(n.id))
+    .map(n => `<option value="${escapeAttr(n.id)}"${n.id === node.drains_to ? ' selected' : ''}>${escapeHtml(n.id + ' — ' + (n.name || ''))} (${nodeTypeLabel(n.type)})</option>`)
+    .join('');
+  const noneSelected = node.drains_to == null ? ' selected' : '';
+  return `
+    <div class="field-row">
+      <label>Drains to</label>
+      <select data-edit-bind="drains_to" data-edit-type="string-or-null">
+        <option value=""${noneSelected}>(unconnected)</option>
+        ${opts}
+      </select>
+      <div class="help-inline">The downstream node receiving this node's flow. Targets that would create a cycle are hidden.</div>
+    </div>`;
+}
+
+function renderCatchmentEditor(node) {
+  const subareaRows = node.subareas.map((sub, i) => {
+    const lcOpts = ['Custom', ...landCovers].map(lc =>
+      `<option value="${escapeAttr(lc)}"${lc === sub.land_cover ? ' selected' : ''}>${escapeHtml(lc)}</option>`
+    ).join('');
+    const emcDefault = (sub.land_cover && sub.land_cover !== 'Custom' && landCoverEmc[sub.land_cover])
+      ? landCoverEmc[sub.land_cover]
+      : null;
+    const tnPlaceholder = emcDefault ? `default ${emcDefault.tn_mgL}` : 'required';
+    const tpPlaceholder = emcDefault ? `default ${emcDefault.tp_mgL}` : 'required';
+    return `
+      <tr data-sub-index="${i}">
+        <td><select data-sub-bind="land_cover">${lcOpts}</select></td>
+        <td><input class="num" type="number" step="0.01" min="0.01" data-sub-bind="area_ac" data-sub-type="float" value="${sub.area_ac}"></td>
+        <td><input class="num" type="number" step="0.01" min="30" max="98" data-sub-bind="non_dcia_cn" data-sub-type="float" value="${sub.non_dcia_cn}"></td>
+        <td><input class="num" type="number" step="0.01" min="0" max="100" data-sub-bind="dcia_pct" data-sub-type="float" value="${sub.dcia_pct}"></td>
+        <td><input class="num" type="number" step="0.01" min="0" data-sub-bind="emc_tn_override" data-sub-type="float-or-null" value="${sub.emc_tn_override == null ? '' : sub.emc_tn_override}" placeholder="${tnPlaceholder}"></td>
+        <td><input class="num" type="number" step="0.01" min="0" data-sub-bind="emc_tp_override" data-sub-type="float-or-null" value="${sub.emc_tp_override == null ? '' : sub.emc_tp_override}" placeholder="${tpPlaceholder}"></td>
+        <td><input type="text" data-sub-bind="notes" value="${escapeAttr(sub.notes || '')}" placeholder=""></td>
+        <td><button class="btn btn-danger" data-sub-action="remove" ${node.subareas.length === 1 ? 'disabled' : ''} title="Remove subarea">×</button></td>
+      </tr>`;
+  }).join('');
+
+  // Compute subarea totals + area-weighted CN and DCIA. The engine does
+  // this internally when calculating, but we recompute here so the user
+  // sees the rolled-up values directly in the editor while typing —
+  // independent of the calc round-trip. These values should match the
+  // "Composite parameters" section in the right-side context panel.
+  let totalArea = 0, weightedCN = 0, weightedDCIA = 0;
+  for (const sub of node.subareas) {
+    const a = sub.area_ac || 0;
+    totalArea += a;
+    weightedCN   += a * (sub.non_dcia_cn || 0);
+    weightedDCIA += a * (sub.dcia_pct   || 0);
+  }
+  const compCN   = totalArea > 0 ? weightedCN   / totalArea : 0;
+  const compDCIA = totalArea > 0 ? weightedDCIA / totalArea : 0;
+  const totalsRow = `
+    <tr class="totals-row">
+      <td class="label-cell">TOTAL / weighted</td>
+      <td class="num">${fmtNum(totalArea, 2)}</td>
+      <td class="num">${fmtNum(compCN, 2)}</td>
+      <td class="num">${fmtNum(compDCIA, 2)}</td>
+      <td colspan="4"></td>
+    </tr>`;
+
+  return `
+    <div class="editor-section">
+      <h3>Subareas</h3>
+      <div class="help-inline" style="margin-bottom:6px;">
+        Each row is a sub-area within this catchment with its own land cover, area, CN, and DCIA. EMC values default from Table 9.2 unless overridden.
+      </div>
+      <table class="subarea-table">
+        <thead>
+          <tr>
+            <th class="col-cover">Land Cover</th>
+            <th class="col-area">Area (ac)</th>
+            <th class="col-cn">CN</th>
+            <th class="col-dcia">%DCIA</th>
+            <th class="col-emc">TN EMC (mg/L)</th>
+            <th class="col-emc">TP EMC (mg/L)</th>
+            <th class="col-notes">Notes</th>
+            <th class="col-action"></th>
+          </tr>
+        </thead>
+        <tbody id="subarea-tbody">${subareaRows}${totalsRow}</tbody>
+      </table>
+      <button class="btn btn-add-row" id="btn-add-subarea">+ Add subarea row</button>
+    </div>`;
+}
+
+// Live-update the totals row WITHOUT re-rendering the whole editor.
+// We only need to mutate the three cells (area, CN, DCIA) in the totals
+// row's <tr>; the user keeps focus in whatever input they were typing in.
+// Called from the subarea input handler.
+function updateSubareaTotalsRow(node) {
+  const tbody = document.getElementById('subarea-tbody');
+  if (!tbody) return;
+  const totalsRow = tbody.querySelector('tr.totals-row');
+  if (!totalsRow) return;
+  let totalArea = 0, weightedCN = 0, weightedDCIA = 0;
+  for (const sub of node.subareas) {
+    const a = sub.area_ac || 0;
+    totalArea += a;
+    weightedCN   += a * (sub.non_dcia_cn || 0);
+    weightedDCIA += a * (sub.dcia_pct   || 0);
+  }
+  const compCN   = totalArea > 0 ? weightedCN   / totalArea : 0;
+  const compDCIA = totalArea > 0 ? weightedDCIA / totalArea : 0;
+  // Cells are: 0=label, 1=area, 2=CN, 3=DCIA, 4=spacer
+  const cells = totalsRow.querySelectorAll('td');
+  if (cells.length >= 4) {
+    cells[1].textContent = fmtNum(totalArea, 2);
+    cells[2].textContent = fmtNum(compCN, 2);
+    cells[3].textContent = fmtNum(compDCIA, 2);
+  }
+}
+
+function renderDryRetentionEditor(node) {
+  return `
+    <div class="editor-section">
+      <h3>Dry retention parameters</h3>
+      <div class="field-row">
+        <label>Storage volume (ac-ft)</label>
+        <input type="number" step="0.001" min="0.001" data-edit-bind="storage_volume_acft" data-edit-type="float" value="${node.storage_volume_acft}">
+        <div class="help-inline">Treatment volume above the pond bottom plus effective unsaturated soil to seasonal high water table.</div>
+      </div>
+    </div>`;
+}
+
+function renderWetDetentionEditor(node) {
+  return `
+    <div class="editor-section">
+      <h3>Wet detention parameters</h3>
+      <div class="field-row">
+        <label>Permanent pool volume (ac-ft)</label>
+        <input type="number" step="0.001" min="0.001" data-edit-bind="permanent_pool_acft" data-edit-type="float" value="${node.permanent_pool_acft}">
+        <div class="help-inline">Drives the residence time td = pool / inflow × 365.</div>
+      </div>
+    </div>
+    <div class="editor-section">
+      <h3>Littoral zone</h3>
+      <div class="field-row">
+        <label>Littoral zone credit (%)</label>
+        <input type="number" step="0.01" min="0" data-edit-bind="littoral_zone_pct" data-edit-type="float" value="${node.littoral_zone_pct}">
+        <div class="help-inline">AH Vol II suggests 10% maximum, but engineer can justify more in notes.</div>
+      </div>
+      <div class="field-row">
+        <label>Littoral zone notes</label>
+        <input type="text" data-edit-bind="littoral_zone_notes" value="${escapeAttr(node.littoral_zone_notes || '')}" placeholder="Justification for credit value">
+      </div>
+    </div>
+    <div class="editor-section">
+      <h3>Floating islands</h3>
+      <div class="field-grid-2">
+        <div class="field-row">
+          <label>Pond coverage (%)</label>
+          <input type="number" step="0.01" min="0" max="100" data-edit-bind="floating_islands_pct_coverage" data-edit-type="float" value="${node.floating_islands_pct_coverage}">
+          <div class="help-inline">≥5% triggers default 12% credit.</div>
+        </div>
+        <div class="field-row">
+          <label>Credit override (%)</label>
+          <input type="number" step="0.01" min="0" data-edit-bind="floating_islands_credit_override" data-edit-type="float-or-null"
+                 value="${node.floating_islands_credit_override == null ? '' : node.floating_islands_credit_override}"
+                 placeholder="${node.floating_islands_pct_coverage >= 5 ? '12 (auto)' : 'leave blank'}">
+        </div>
+      </div>
+      <div class="field-row">
+        <label>Floating islands notes</label>
+        <input type="text" data-edit-bind="floating_islands_notes" value="${escapeAttr(node.floating_islands_notes || '')}">
+      </div>
+    </div>
+    <div class="editor-section">
+      <h3>Alum injection</h3>
+      <div class="field-grid-2">
+        <div class="field-row">
+          <label>TN credit (%)</label>
+          <input type="number" step="0.01" min="0" data-edit-bind="alum_injection_credit_tn_pct" data-edit-type="float" value="${node.alum_injection_credit_tn_pct}">
+        </div>
+        <div class="field-row">
+          <label>TP credit (%)</label>
+          <input type="number" step="0.01" min="0" data-edit-bind="alum_injection_credit_tp_pct" data-edit-type="float" value="${node.alum_injection_credit_tp_pct}">
+        </div>
+      </div>
+      <div class="field-row">
+        <label>Alum injection notes</label>
+        <input type="text" data-edit-bind="alum_injection_notes" value="${escapeAttr(node.alum_injection_notes || '')}" placeholder="Jar testing study citation">
+      </div>
+    </div>`;
+}
+
+function renderOtherBmpEditor(node) {
+  const presetOpts = Object.keys(presets).map(k =>
+    `<option value="${escapeAttr(k)}"${k === node.preset ? ' selected' : ''}>${escapeHtml(presets[k].name)}</option>`
+  ).join('');
+  return `
+    <div class="editor-section">
+      <h3>Other BMP parameters</h3>
+      <div class="field-row">
+        <label>Preset</label>
+        <select data-edit-bind="preset" id="other-preset-select">${presetOpts}</select>
+        <div class="help-inline">Selecting a preset auto-populates the TN/TP fields below; you can override them.</div>
+      </div>
+      <div class="field-grid-2">
+        <div class="field-row">
+          <label>TN removal (%)</label>
+          <input type="number" step="0.01" min="0" max="100" data-edit-bind="tn_removal_pct" data-edit-type="float" value="${node.tn_removal_pct}">
+        </div>
+        <div class="field-row">
+          <label>TP removal (%)</label>
+          <input type="number" step="0.01" min="0" max="100" data-edit-bind="tp_removal_pct" data-edit-type="float" value="${node.tp_removal_pct}">
+        </div>
+      </div>
+      <div class="help-inline">${escapeHtml((presets[node.preset] || {}).source || '')}</div>
+    </div>`;
+}
+
+function renderOutfallEditor(node) {
+  return `
+    <div class="editor-section">
+      <h3>Outfall</h3>
+      <div class="help-inline">
+        Outfalls are sinks — they record final volume and load reaching them. No parameters.
+      </div>
+    </div>`;
+}
+
+/* ------------------------------------------------------------
+ * Editor event wiring
+ * ------------------------------------------------------------ */
+function attachEditorHandlers(node) {
+  const mid = document.getElementById('col-mid');
+
+  // Common fields (data-edit-bind)
+  mid.querySelectorAll('[data-edit-bind]').forEach(el => {
+    el.addEventListener('input', () => {
+      const key = el.dataset.editBind;
+      const t   = el.dataset.editType || 'string';
+      let v;
+      if (t === 'string-or-null') {
+        v = el.value === '' ? null : el.value;
+      } else {
+        v = coerceValue(el.value, t);
+      }
+      node[key] = v;
+
+      // Other BMP: when preset changes, copy default values into the load fields
+      if (node.type === 'other_bmp' && key === 'preset' && presets[v]) {
+        node.tn_removal_pct = presets[v].default_tn_pct;
+        node.tp_removal_pct = presets[v].default_tp_pct;
+        renderEditor();   // re-render so the fields visually update
+      }
+      // Wet detention: when floating-islands coverage changes, update the
+      // credit-override field's placeholder live (without a full re-render,
+      // which would steal focus from the user's current input).
+      if (node.type === 'wet_detention' && key === 'floating_islands_pct_coverage') {
+        const overrideInput = mid.querySelector('[data-edit-bind="floating_islands_credit_override"]');
+        if (overrideInput) {
+          overrideInput.placeholder = (v != null && v >= 5) ? '12 (auto)' : 'leave blank';
+        }
+      }
+      // Update display name in the node card and editor header
+      if (key === 'name') {
+        renderNodeList();
+        const headerName = mid.querySelector('.nh-name');
+        if (headerName) headerName.textContent = v || '';
+      }
+      if (key === 'drains_to') {
+        renderNodeList();
+      }
+      markDirty();
+    });
+  });
+
+  // ID rename
+  const idInput = mid.querySelector('#edit-id');
+  if (idInput) {
+    idInput.addEventListener('change', () => {
+      const newId = idInput.value.trim();
+      if (!newId || newId === node.id) {
+        idInput.value = node.id;
+        return;
+      }
+      if (project.nodes.some(n => n.id === newId)) {
+        alert(`ID "${newId}" is already in use.`);
+        idInput.value = node.id;
+        return;
+      }
+      // Update all drains_to references
+      const oldId = node.id;
+      project.nodes.forEach(n => {
+        if (n.drains_to === oldId) n.drains_to = newId;
+      });
+      node.id = newId;
+      selectedNodeId = newId;
+      render();
+      markDirty();
+    });
+  }
+
+  // Delete
+  const delBtn = mid.querySelector('#btn-delete-node');
+  if (delBtn) {
+    delBtn.addEventListener('click', () => {
+      if (!confirm(`Delete node ${node.id} (${node.name})?`)) return;
+      project.nodes = project.nodes.filter(n => n.id !== node.id);
+      // Null out any drains_to that pointed at this node
+      project.nodes.forEach(n => {
+        if (n.drains_to === node.id) n.drains_to = null;
+      });
+      selectedNodeId = null;
+      render();
+      markDirty();
+    });
+  }
+
+  // Subarea row inputs
+  mid.querySelectorAll('[data-sub-bind]').forEach(el => {
+    el.addEventListener('input', () => {
+      const tr = el.closest('tr');
+      const idx = parseInt(tr.dataset.subIndex, 10);
+      const key = el.dataset.subBind;
+      const t = el.dataset.subType || 'string';
+      let v;
+      if (t === 'float-or-null') {
+        v = el.value === '' ? null : coerceValue(el.value, 'float');
+      } else {
+        v = coerceValue(el.value, t);
+      }
+      node.subareas[idx][key] = v;
+      // Re-render placeholders if land_cover changed (so EMC defaults update)
+      if (key === 'land_cover') renderEditor();
+      // Live-update the totals row when area, CN, or DCIA changes — pure
+      // arithmetic, no engine round-trip needed. Keeps the totals in sync
+      // with what the user is typing without losing focus.
+      if (key === 'area_ac' || key === 'non_dcia_cn' || key === 'dcia_pct') {
+        updateSubareaTotalsRow(node);
+      }
+      markDirty();
+    });
+  });
+
+  // Subarea remove
+  mid.querySelectorAll('[data-sub-action="remove"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tr = btn.closest('tr');
+      const idx = parseInt(tr.dataset.subIndex, 10);
+      if (node.subareas.length <= 1) return;
+      node.subareas.splice(idx, 1);
+      renderEditor();
+      markDirty();
+    });
+  });
+
+  // Add subarea
+  const addSubBtn = mid.querySelector('#btn-add-subarea');
+  if (addSubBtn) {
+    addSubBtn.addEventListener('click', () => {
+      node.subareas.push(makeSubarea());
+      renderEditor();
+      markDirty();
+    });
+  }
+}
+
+/* ------------------------------------------------------------
+ * Results panel
+ *
+ * Two sections, top-to-bottom:
+ *   1. "This node" — a context-sensitive panel showing the
+ *      currently selected node's inputs, calculation specifics,
+ *      and outputs. Shown only when a node is selected and the
+ *      engine has produced a trace for it.
+ *   2. "Project totals" — baseline, per-outfall discharge,
+ *      reductions, and any warnings. Always shown.
+ *
+ * Both are driven by `lastResult` from the most recent /api/calculate.
+ * ------------------------------------------------------------ */
+function renderResults() {
+  const el = document.getElementById('results-area');
+
+  if (lastError) {
+    el.innerHTML = `
+      <div class="error-banner">
+        <b>${escapeHtml(lastError.error || 'Error')}</b>
+        ${escapeHtml(lastError.detail || '')}
+      </div>`;
+    return;
+  }
+  if (!lastResult) {
+    el.innerHTML = `
+      <div class="editor-empty" style="padding:20px 10px;">
+        Build a project on the left to see results here.
+      </div>`;
+    return;
+  }
+  const r = lastResult;
+
+  // ---- Per-node context panel (when a node is selected) ----
+  let nodePanelHtml = '';
+  if (selectedNodeId) {
+    const node = project.nodes.find(n => n.id === selectedNodeId);
+    const trace = (r.traces || []).find(t => t.node_id === selectedNodeId);
+    if (node && trace) {
+      nodePanelHtml = renderNodeContextPanel(node, trace);
+    }
+  }
+
+  // ---- Project totals ----
+  let totalV = 0, totalTn = 0, totalTp = 0;
+  for (const oid in r.outfall_results) {
+    totalV  += r.outfall_results[oid].volume_acft;
+    totalTn += r.outfall_results[oid].tn_lb;
+    totalTp += r.outfall_results[oid].tp_lb;
+  }
+  const tnRed = (r.baseline_tn_lb > 0) ? (1 - totalTn / r.baseline_tn_lb) * 100 : 0;
+  const tpRed = (r.baseline_tp_lb > 0) ? (1 - totalTp / r.baseline_tp_lb) * 100 : 0;
+
+  let outfallHtml = '';
+  for (const oid in r.outfall_results) {
+    const o = r.outfall_results[oid];
+    outfallHtml += `
+      <div class="result-block">
+        <h3>${escapeHtml(oid)} — ${escapeHtml(o.name || '')}</h3>
+        <div class="result-row"><span class="label">Volume</span>
+          <span class="value">${fmtNum(o.volume_acft, 2)}<span class="value-units"> ac-ft/yr</span></span></div>
+        <div class="result-row"><span class="label">TN</span>
+          <span class="value">${fmtNum(o.tn_lb, 2)}<span class="value-units"> lb (${fmtNum(o.tn_lb / LB_PER_KG, 2)} kg)</span></span></div>
+        <div class="result-row"><span class="label">TP</span>
+          <span class="value">${fmtNum(o.tp_lb, 2)}<span class="value-units"> lb (${fmtNum(o.tp_lb / LB_PER_KG, 2)} kg)</span></span></div>
+      </div>`;
+  }
+
+  // Warnings
+  const allWarnings = [];
+  (r.warnings || []).forEach(w => allWarnings.push({ source: 'project', text: w }));
+  (r.traces || []).forEach(t => {
+    (t.warnings || []).forEach(w => allWarnings.push({ source: t.node_id, text: w }));
+  });
+  let warningsHtml = '';
+  if (allWarnings.length) {
+    warningsHtml = `
+      <div class="results-section-header" style="margin-top:14px;">Warnings (${allWarnings.length})</div>` +
+      allWarnings.map(w => `
+        <div class="warning-list">
+          <span class="w-source">[${escapeHtml(w.source)}]</span>${escapeHtml(w.text)}
+        </div>`).join('');
+  }
+
+  const projectTotalsHeader = nodePanelHtml
+    ? `<div class="results-section-header">Project totals</div>`
+    : '';
+
+  el.innerHTML = `
+    ${nodePanelHtml}
+    ${projectTotalsHeader}
+    <div class="result-block">
+      <h3>Baseline (untreated)</h3>
+      <div class="result-row"><span class="label">Volume</span>
+        <span class="value">${fmtNum(r.baseline_volume_acft, 2)}<span class="value-units"> ac-ft/yr</span></span></div>
+      <div class="result-row"><span class="label">TN</span>
+        <span class="value">${fmtNum(r.baseline_tn_lb, 2)}<span class="value-units"> lb (${fmtNum(r.baseline_tn_lb / LB_PER_KG, 2)} kg)</span></span></div>
+      <div class="result-row"><span class="label">TP</span>
+        <span class="value">${fmtNum(r.baseline_tp_lb, 2)}<span class="value-units"> lb (${fmtNum(r.baseline_tp_lb / LB_PER_KG, 2)} kg)</span></span></div>
+    </div>
+    ${outfallHtml}
+    <div class="reductions-grid">
+      <div class="result-block result-reduction">
+        <div class="label">TN reduction</div>
+        <div class="value">${fmtNum(tnRed, 2)}%</div>
+      </div>
+      <div class="result-block result-reduction">
+        <div class="label">TP reduction</div>
+        <div class="value">${fmtNum(tpRed, 2)}%</div>
+      </div>
+    </div>
+    ${warningsHtml}
+  `;
+}
+
+/* ------------------------------------------------------------
+ * Per-node context panel
+ *
+ * Dispatcher — picks the right renderer based on node type.
+ * Each renderer reads from `trace.calculation_details` (the
+ * type-specific intermediate values), `trace.inputs_summary`
+ * (volume / TN / TP coming in from upstream), and
+ * `trace.outputs_summary` (volume / TN / TP going out).
+ * ------------------------------------------------------------ */
+function renderNodeContextPanel(node, trace) {
+  const header = `
+    <div class="results-section-header">
+      <span class="header-id">${escapeHtml(node.id)}</span>
+      <span class="header-name">${escapeHtml(node.name || '')}</span>
+    </div>`;
+  let body = '';
+  switch (node.type) {
+    case 'catchment':     body = renderCatchmentContext(node, trace); break;
+    case 'dry_retention': body = renderDryRetentionContext(node, trace); break;
+    case 'wet_detention': body = renderWetDetentionContext(node, trace); break;
+    case 'other_bmp':     body = renderOtherBmpContext(node, trace); break;
+    case 'outfall':       body = renderOutfallContext(node, trace); break;
+    default:              body = '';
+  }
+  return header + body;
+}
+
+// Reusable row builders for the in/out flows
+function flowRow(label, value, units, tag) {
+  const tagHtml = tag ? `<span class="tag">${escapeHtml(tag)}</span>` : '';
+  return `
+    <div class="result-row"><span class="label">${escapeHtml(label)}${tagHtml}</span>
+      <span class="value">${value}<span class="value-units"> ${escapeHtml(units)}</span></span></div>`;
+}
+function flowVolumeRow(label, volume_acft, area_ac, tag) {
+  // For catchments/BMPs we can additionally show inches over a reference
+  // area when an area is supplied. Helps engineers eyeball whether a
+  // retention volume is reasonable (e.g., "0.5 in over catchment").
+  if (volume_acft == null) return flowRow(label, '—', '', tag);
+  let inches = null;
+  if (area_ac && area_ac > 0) inches = volume_acft / area_ac * 12;
+  const valueHtml =
+    `${fmtNum(volume_acft, 3)}<span class="value-units"> ac-ft/yr` +
+    (inches != null ? ` (${fmtNum(inches, 2)} in)` : '') + `</span>`;
+  const tagHtml = tag ? `<span class="tag">${escapeHtml(tag)}</span>` : '';
+  return `
+    <div class="result-row"><span class="label">${escapeHtml(label)}${tagHtml}</span>
+      <span class="value">${valueHtml}</span></div>`;
+}
+function flowLoadRow(label, lb_yr, tag) {
+  if (lb_yr == null) return flowRow(label, '—', '', tag);
+  const kg = lb_yr / LB_PER_KG;
+  const valueHtml = `${fmtNum(lb_yr, 2)}<span class="value-units"> lb (${fmtNum(kg, 2)} kg)</span>`;
+  const tagHtml = tag ? `<span class="tag">${escapeHtml(tag)}</span>` : '';
+  return `
+    <div class="result-row"><span class="label">${escapeHtml(label)}${tagHtml}</span>
+      <span class="value">${valueHtml}</span></div>`;
+}
+
+// ---- Catchment context ----
+function renderCatchmentContext(node, trace) {
+  const cd = trace.calculation_details || {};
+  const ins = trace.inputs_summary || {};
+  const outs = trace.outputs_summary || {};
+
+  const hasInflow = (ins.volume_acft || 0) > 0;
+  const ownArea = cd.own_total_area_ac || 0;
+  // Annual runoff in inches over the catchment's own area
+  const inflowSection = hasInflow ? `
+    <div class="result-subsection">
+      <div class="sub-title">From upstream${ins.components && ins.components.length ? ' (' + ins.components.join(', ') + ')' : ''}</div>
+      ${flowRow('Volume', fmtNum(ins.volume_acft, 3), 'ac-ft/yr')}
+      ${flowLoadRow('TN', ins.tn_lb)}
+      ${flowLoadRow('TP', ins.tp_lb)}
+    </div>` : '';
+
+  return `
+    <div class="result-block node-context catchment">
+      ${inflowSection}
+      <div class="result-subsection">
+        <div class="sub-title">This catchment generates</div>
+        ${flowVolumeRow('Runoff', cd.own_volume_acft, ownArea)}
+        ${flowLoadRow('TN', cd.own_tn_lb)}
+        ${flowLoadRow('TP', cd.own_tp_lb)}
+      </div>
+      <div class="result-subsection">
+        <div class="sub-title">Composite parameters</div>
+        <div class="result-row"><span class="label">Total area</span>
+          <span class="value">${fmtNum(ownArea, 2)}<span class="value-units"> ac</span></span></div>
+        <div class="result-row"><span class="label">Composite CN</span>
+          <span class="value">${fmtNum(cd.own_composite_cn, 2)}</span></div>
+        <div class="result-row"><span class="label">Composite DCIA</span>
+          <span class="value">${fmtNum(cd.own_composite_dcia, 2)}<span class="value-units">%</span></span></div>
+      </div>
+      ${hasInflow ? `
+      <div class="result-subsection">
+        <div class="sub-title">Total outflow (upstream + own)</div>
+        ${flowVolumeRow('Volume', outs.volume_acft, ownArea)}
+        ${flowLoadRow('TN', outs.tn_lb)}
+        ${flowLoadRow('TP', outs.tp_lb)}
+      </div>` : ''}
+    </div>`;
+}
+
+// ---- Dry retention context ----
+function renderDryRetentionContext(node, trace) {
+  const cd = trace.calculation_details || {};
+  const ins = trace.inputs_summary || {};
+  const outs = trace.outputs_summary || {};
+  const eff = cd.efficiency_pct;
+  // Total contributing area for the inches-over-catchment column
+  const ca = cd.contributing_area_ac;
+
+  return `
+    <div class="result-block node-context dry_retention">
+      <div class="result-subsection">
+        <div class="sub-title">Inflow${ins.components && ins.components.length ? ' (' + ins.components.join(', ') + ')' : ''}</div>
+        ${flowVolumeRow('Volume', ins.volume_acft, ca)}
+        ${flowLoadRow('TN', ins.tn_lb)}
+        ${flowLoadRow('TP', ins.tp_lb)}
+      </div>
+      <div class="result-subsection">
+        <div class="sub-title">Treatment</div>
+        <div class="result-row"><span class="label">Storage volume</span>
+          <span class="value">${fmtNum(cd.storage_acft, 3)}<span class="value-units"> ac-ft</span></span></div>
+        <div class="result-row"><span class="label">Contributing area</span>
+          <span class="value">${fmtNum(ca, 2)}<span class="value-units"> ac</span></span></div>
+        <div class="result-row highlighted"><span class="label">Storage depth (over contributing area)</span>
+          <span class="value">${fmtNum(cd.retention_depth_in, 2)}<span class="value-units"> in</span></span></div>
+        <div class="result-row"><span class="label">Composite CN / DCIA</span>
+          <span class="value">${fmtNum(cd.composite_cn, 2)} / ${fmtNum(cd.composite_dcia, 2)}<span class="value-units">%</span></span></div>
+        <div class="result-row highlighted"><span class="label">Capture efficiency</span>
+          <span class="value">${fmtNum(eff, 2)}<span class="value-units">%</span></span></div>
+        <div class="result-row"><span class="label" style="color:#777;font-size:11px;font-style:italic;">applied to volume, TN, and TP equally</span><span></span></div>
+      </div>
+      <div class="result-subsection">
+        <div class="sub-title">Outflow</div>
+        ${flowVolumeRow('Volume', outs.volume_acft, ca)}
+        ${flowLoadRow('TN', outs.tn_lb)}
+        ${flowLoadRow('TP', outs.tp_lb)}
+      </div>
+    </div>`;
+}
+
+// ---- Wet detention context ----
+function renderWetDetentionContext(node, trace) {
+  const cd = trace.calculation_details || {};
+  const ins = trace.inputs_summary || {};
+  const outs = trace.outputs_summary || {};
+
+  return `
+    <div class="result-block node-context wet_detention">
+      <div class="result-subsection">
+        <div class="sub-title">Inflow${ins.components && ins.components.length ? ' (' + ins.components.join(', ') + ')' : ''}</div>
+        ${flowRow('Volume', fmtNum(ins.volume_acft, 3), 'ac-ft/yr')}
+        ${flowLoadRow('TN', ins.tn_lb)}
+        ${flowLoadRow('TP', ins.tp_lb)}
+      </div>
+      <div class="result-subsection">
+        <div class="sub-title">Hydraulics</div>
+        <div class="result-row"><span class="label">Permanent pool</span>
+          <span class="value">${fmtNum(cd.permanent_pool_acft, 3)}<span class="value-units"> ac-ft</span></span></div>
+        <div class="result-row highlighted"><span class="label">Residence time (t<sub>d</sub>)</span>
+          <span class="value">${fmtNum(cd.residence_time_days, 1)}<span class="value-units"> days</span></span></div>
+      </div>
+      <div class="result-subsection">
+        <div class="sub-title">Removal — base + credits</div>
+        <div class="result-row"><span class="label">Base TN / TP</span>
+          <span class="value">${fmtNum(cd.base_tn_pct, 2)}% / ${fmtNum(cd.base_tp_pct, 2)}%</span></div>
+        <div class="result-row"><span class="label">Littoral credit</span>
+          <span class="value">${fmtNum(cd.littoral_credit_pct, 2)}<span class="value-units">%</span></span></div>
+        <div class="result-row"><span class="label">Floating islands credit</span>
+          <span class="value">${fmtNum(cd.floating_islands_credit_pct, 2)}<span class="value-units">%</span></span></div>
+        <div class="result-row"><span class="label">Alum (TN / TP)</span>
+          <span class="value">${fmtNum(cd.alum_tn_pct, 2)}% / ${fmtNum(cd.alum_tp_pct, 2)}%</span></div>
+        <div class="result-row highlighted"><span class="label">Combined TN / TP (Eq. 9-5)</span>
+          <span class="value">${fmtNum(cd.eff_tn_pct, 2)}% / ${fmtNum(cd.eff_tp_pct, 2)}%</span></div>
+      </div>
+      <div class="result-subsection">
+        <div class="sub-title">Outflow</div>
+        ${flowRow('Volume', fmtNum(outs.volume_acft, 3), 'ac-ft/yr', 'no volume reduction')}
+        ${flowLoadRow('TN', outs.tn_lb)}
+        ${flowLoadRow('TP', outs.tp_lb)}
+      </div>
+    </div>`;
+}
+
+// ---- Other BMP context ----
+function renderOtherBmpContext(node, trace) {
+  const cd = trace.calculation_details || {};
+  const ins = trace.inputs_summary || {};
+  const outs = trace.outputs_summary || {};
+
+  return `
+    <div class="result-block node-context other_bmp">
+      <div class="result-subsection">
+        <div class="sub-title">Inflow${ins.components && ins.components.length ? ' (' + ins.components.join(', ') + ')' : ''}</div>
+        ${flowRow('Volume', fmtNum(ins.volume_acft, 3), 'ac-ft/yr')}
+        ${flowLoadRow('TN', ins.tn_lb)}
+        ${flowLoadRow('TP', ins.tp_lb)}
+      </div>
+      <div class="result-subsection">
+        <div class="sub-title">Treatment</div>
+        <div class="result-row"><span class="label">Preset</span>
+          <span class="value" style="font-size:12px;">${escapeHtml(cd.preset_name || cd.preset || '—')}</span></div>
+        <div class="result-row highlighted"><span class="label">TN / TP removal applied</span>
+          <span class="value">${fmtNum(cd.tn_removal_pct, 2)}% / ${fmtNum(cd.tp_removal_pct, 2)}%</span></div>
+      </div>
+      <div class="result-subsection">
+        <div class="sub-title">Outflow</div>
+        ${flowRow('Volume', fmtNum(outs.volume_acft, 3), 'ac-ft/yr', 'no volume reduction')}
+        ${flowLoadRow('TN', outs.tn_lb)}
+        ${flowLoadRow('TP', outs.tp_lb)}
+      </div>
+    </div>`;
+}
+
+// ---- Outfall context ----
+function renderOutfallContext(node, trace) {
+  const ins = trace.inputs_summary || {};
+
+  return `
+    <div class="result-block node-context outfall">
+      <div class="result-subsection">
+        <div class="sub-title">Final discharge${ins.components && ins.components.length ? ' (from ' + ins.components.join(', ') + ')' : ''}</div>
+        ${flowRow('Volume', fmtNum(ins.volume_acft, 3), 'ac-ft/yr')}
+        ${flowLoadRow('TN', ins.tn_lb)}
+        ${flowLoadRow('TP', ins.tp_lb)}
+      </div>
+    </div>`;
+}
+
+/* ------------------------------------------------------------
+ * Save / Load / New / Report
+ * ------------------------------------------------------------ */
+function downloadProject() {
+  const safeName = (project.project.name || 'project').replace(/[^A-Za-z0-9_\-]+/g, '_');
+  const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = safeName + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
+function loadProjectFromFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const obj = JSON.parse(e.target.result);
+      if (!obj.schema_version || !obj.nodes) throw new Error('Not a SAGE project file.');
+      project = obj;
+      selectedNodeId = null;
+      saveAutosave();
+      render();
+      runCalculation();
+    } catch (err) {
+      alert('Could not load project: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+async function generateReport(style) {
+  try {
+    const r = await fetch('/api/report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project: project, style: style }),
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({error: 'Unknown error'}));
+      alert('Report generation failed: ' + (err.detail || err.error));
+      return;
+    }
+    const html = await r.text();
+    // Open in a new tab
+    const w = window.open('', '_blank');
+    if (!w) {
+      alert('Pop-up blocker prevented opening the report. Please allow pop-ups for this site.');
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  } catch (e) {
+    alert('Network error generating report: ' + e.message);
+  }
+}
+
+/* ------------------------------------------------------------
+ * Utility: HTML escape
+ * ------------------------------------------------------------ */
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function escapeAttr(s) { return escapeHtml(s); }
+function fmtNum(n, decimals) {
+  if (n == null || isNaN(n)) return '—';
+  return Number(n).toFixed(decimals);
+}
+function nodeTypeLabel(t) {
+  return ({
+    catchment: 'Catchment',
+    dry_retention: 'Dry Retention',
+    wet_detention: 'Wet Detention',
+    other_bmp: 'Other BMP',
+    outfall: 'Outfall'
+  })[t] || t;
+}
+
+/* ------------------------------------------------------------
+ * Wire up top-level events
+ * ------------------------------------------------------------ */
+function setupGlobalHandlers() {
+  // Header inputs
+  document.querySelectorAll('.app-header [data-bind], .col-left [data-bind]').forEach(el => {
+    el.addEventListener('input', () => {
+      const path = el.dataset.bind;
+      const t = el.dataset.bindType || 'string';
+      const v = coerceValue(el.value, t);
+      setByPath(project, path, v);
+      markDirty();
+    });
+  });
+
+  // Top buttons
+  document.getElementById('btn-new').addEventListener('click', () => {
+    if (!confirm('Discard current project and start a new one?')) return;
+    project = newEmptyProject();
+    selectedNodeId = null;
+    render();
+    runCalculation();
+  });
+  document.getElementById('btn-save').addEventListener('click', downloadProject);
+  document.getElementById('btn-load').addEventListener('click', () => {
+    document.getElementById('file-input').click();
+  });
+  document.getElementById('file-input').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) loadProjectFromFile(file);
+    e.target.value = '';   // reset so same file can be re-loaded
+  });
+  document.getElementById('btn-report-summary').addEventListener('click', () => generateReport('summary'));
+  document.getElementById('btn-report-full').addEventListener('click', () => generateReport('full'));
+
+  // +Add buttons (event delegation)
+  document.querySelectorAll('[data-add-type]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = btn.dataset.addType;
+      const id = nextId(prefixForType(type));
+      const factory = ({
+        catchment: makeCatchmentNode,
+        dry_retention: makeDryRetentionNode,
+        wet_detention: makeWetDetentionNode,
+        other_bmp: makeOtherBmpNode,
+        outfall: id => makeOutfallNode(id, "New Outfall")
+      })[type];
+      project.nodes.push(factory(id));
+      selectedNodeId = id;
+      render();
+      markDirty();
+    });
+  });
+
+  // Node card click
+  document.getElementById('node-list').addEventListener('click', e => {
+    const card = e.target.closest('.node-card');
+    if (!card) return;
+    selectedNodeId = card.dataset.nodeId;
+    render();
+  });
+}
+
+/* ------------------------------------------------------------
+ * Boot
+ * ------------------------------------------------------------ */
+async function boot() {
+  // Load reference data first (so subarea defaults work properly)
+  try {
+    const lcResp = await fetch('/api/land_covers');
+    const lcData = await lcResp.json();
+    landCovers = lcData.land_covers || [];
+    landCoverEmc = lcData.emc || {};
+  } catch (e) {
+    console.error('Failed to load land covers:', e);
+  }
+  try {
+    const pResp = await fetch('/api/presets');
+    presets = await pResp.json();
+  } catch (e) {
+    console.error('Failed to load presets:', e);
+  }
+
+  // Restore from autosave or start fresh
+  if (!loadAutosave()) {
+    project = newEmptyProject();
+  }
+  setupGlobalHandlers();
+  render();
+  runCalculation();
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+</script>
+
+</body>
+</html>

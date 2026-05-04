@@ -1,0 +1,44 @@
+SAGE — Stormwater Analysis & GSI Evaluator
+Copyright 2026 Druid
+
+This product includes software developed by Druid (https://druid.solutions).
+
+------------------------------------------------------------------------------
+TRADEMARKS
+
+SAGE™ and DRUID™ are unregistered trademarks of Druid. Use of these
+marks is governed by Section 6 of the Apache License, Version 2.0:
+the License does not grant permission to use the trade names,
+trademarks, service marks, or product names of the Licensor, except
+as required for describing the origin of the Work and reproducing
+the content of this NOTICE file.
+
+------------------------------------------------------------------------------
+THIRD-PARTY DATA AND METHODOLOGY
+
+The lookup tables included under the data/ directory are transcribed
+from the Florida Department of Environmental Protection Applicant's
+Handbook Volume I (June 28, 2024), specifically Appendices N (Annual
+Runoff Coefficients) and O (Dry Retention Efficiency Tables) and
+Table 9.2 (Event Mean Concentrations). These tables are part of a
+public Florida regulatory document and are used here for the purpose
+of implementing the methodologies described in that handbook.
+
+The calculation methodologies implemented in this software (mass
+loading via Eq. 9-2, dry retention efficiency lookup, wet detention
+residence-time formulas, treatment train compounding via Eq. 9-5,
+and related procedures) are derived from FDEP Applicant's Handbook
+Volume I and FDEP MASSLOADINGMETHODOLOGY and DETENTIONMETHODOLOGY
+technical references.
+
+This software is not produced by, endorsed by, or affiliated with
+the Florida Department of Environmental Protection.
+
+------------------------------------------------------------------------------
+ENGINEERING DISCLAIMER
+
+Generated results are provided for engineering use and must be
+independently verified by the user or responsible professional. Users
+are responsible for confirming inputs, assumptions, calculations,
+site applicability, and regulatory acceptance. Use of this software
+does not constitute agency approval or a guarantee of compliance.

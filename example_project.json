@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "project": {
+    "name": "Walkthrough Example",
+    "applicant": "Test User",
+    "date_created": "2025-05-02",
+    "date_modified": "2025-05-02",
+    "zone": 4,
+    "annual_rainfall_in": 52.0,
+    "default_units": "lb_per_yr",
+    "notes": "Two-catchment, two-dry-pond, one-wet-pond example developed during tool design discussions. C1 -> B1 -> B2; C2 -> B2; B2 -> B3 -> OUT1."
+  },
+  "nodes": [
+    {
+      "id": "C1",
+      "type": "catchment",
+      "name": "Catchment 1",
+      "notes": "Drains to north dry pond",
+      "drains_to": "B1",
+      "position": { "x": 100, "y": 100 },
+      "subareas": [
+        {
+          "land_cover": "Single Family",
+          "area_ac": 10.0,
+          "non_dcia_cn": 80.00,
+          "dcia_pct": 40.00,
+          "emc_tn_override": null,
+          "emc_tp_override": null,
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "type": "catchment",
+      "name": "Catchment 2",
+      "notes": "Drains directly to second dry pond",
+      "drains_to": "B2",
+      "position": { "x": 100, "y": 300 },
+      "subareas": [
+        {
+          "land_cover": "Single Family",
+          "area_ac": 10.0,
+          "non_dcia_cn": 80.00,
+          "dcia_pct": 40.00,
+          "emc_tn_override": null,
+          "emc_tp_override": null,
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "id": "B1",
+      "type": "dry_retention",
+      "name": "North Dry Pond",
+      "notes": "Treats Catchment 1 only; 1 inch over C1's 10 acres",
+      "drains_to": "B2",
+      "position": { "x": 300, "y": 100 },
+      "storage_volume_acft": 0.833
+    },
+    {
+      "id": "B2",
+      "type": "dry_retention",
+      "name": "Combined Dry Pond",
+      "notes": "Receives B1 discharge plus C2 raw runoff",
+      "drains_to": "B3",
+      "position": { "x": 500, "y": 200 },
+      "storage_volume_acft": 0.833
+    },
+    {
+      "id": "B3",
+      "type": "wet_detention",
+      "name": "Final Wet Pond",
+      "notes": "Polishing wet pond before outfall",
+      "drains_to": "OUT1",
+      "position": { "x": 700, "y": 200 },
+      "permanent_pool_acft": 2.0,
+      "littoral_zone_pct": 10.0,
+      "littoral_zone_notes": "10% littoral credit per AH Vol II",
+      "floating_islands_pct_coverage": 0.0,
+      "floating_islands_credit_override": null,
+      "floating_islands_notes": "",
+      "alum_injection_credit_tn_pct": 0.0,
+      "alum_injection_credit_tp_pct": 0.0,
+      "alum_injection_notes": ""
+    },
+    {
+      "id": "OUT1",
+      "type": "outfall",
+      "name": "Discharge to receiving water",
+      "notes": "",
+      "position": { "x": 900, "y": 200 }
+    }
+  ]
+}
