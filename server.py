@@ -42,8 +42,12 @@ The server logs each request to stdout and handles errors by returning
 JSON with an `error` key. It does not write any files; the frontend
 handles save/load via browser file APIs.
 
-Security note: this is intended for localhost use only. It binds to
-127.0.0.1 by default. Do NOT expose to the internet.
+Security note: his server is safe to expose publicly because all endpoints 
+are stateless calculations on user-supplied input — no server-side storage, 
+no authentication required. The browser handles save/load via file APIs. 
+However, the /api/calculate and /api/report endpoints accept arbitrary 
+JSON and run engineering calculations, so for high-traffic deployments 
+consider adding rate limiting in front of the server.
 """
 
 import argparse
@@ -60,6 +64,7 @@ import bmps
 import report
 from _version import __version__
 
+import os
 
 # Paths
 HERE = Path(__file__).parent
@@ -273,10 +278,15 @@ def main(argv=None):
     parser = argparse.ArgumentParser(
         description="SAGE — Stormwater Analysis & GSI Evaluator HTTP server."
     )
-    parser.add_argument("--port", type=int, default=8765,
-                        help="Port to bind (default: 8765)")
-    parser.add_argument("--host", default="127.0.0.1",
-                        help="Host to bind (default: 127.0.0.1, localhost only)")
+    # PORT env var is set by hosting platforms (Render, Fly, Heroku, etc.).
+    # Falls back to 8765 for local development.
+    parser.add_argument("--port", type=int,
+                        default=int(os.environ.get("PORT", 8765)),
+                        help="Port to bind (default: $PORT or 8765)")
+    # Bind to 0.0.0.0 when deployed (PORT env var is set); 127.0.0.1 locally.
+    parser.add_argument("--host",
+                        default="0.0.0.0" if "PORT" in os.environ else "127.0.0.1",
+                        help="Host to bind (default: 0.0.0.0 if hosted, else 127.0.0.1)")
     args = parser.parse_args(argv)
 
     if not (WEB_DIR / "index.html").exists():
